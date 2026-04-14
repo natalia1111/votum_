@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Оценка учебных материалов — STEAM</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Geologica:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f5f7fa;
+    --border: #dde3ec;
+    --accent: #1a7f5a;
+    --accent2: #2563eb;
+    --accent3: #db2777;
+    --text: #1a1f2e;
+    --muted: #6b7280;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Geologica', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background ── */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(26,127,90,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,127,90,.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .bg-glow {
+    position: fixed; width: 600px; height: 600px; border-radius: 50%;
+    filter: blur(120px); opacity: 0.22; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, #a7f3d0, transparent 70%);
+    top: -100px; left: -100px;
+    animation: driftA 18s ease-in-out infinite alternate;
+  }
+  .bg-glow2 {
+    position: fixed; width: 500px; height: 500px; border-radius: 50%;
+    filter: blur(100px); opacity: 0.18; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, #bfdbfe, transparent 70%);
+    bottom: -80px; right: -80px;
+    animation: driftB 22s ease-in-out infinite alternate;
+  }
+  @keyframes driftA { from { transform: translate(0,0); } to { transform: translate(80px, 60px); } }
+  @keyframes driftB { from { transform: translate(0,0); } to { transform: translate(-60px, -80px); } }
+
+  /* ── Layout ── */
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 860px; margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    text-align: center; margin-bottom: 52px;
+  }
+  .site-header .tag {
+    display: inline-block;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 5px 14px; border-radius: 50px; margin-bottom: 20px;
+    opacity: .8;
+  }
+  .site-header h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 900;
+    line-height: 1.15;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .site-header p {
+    color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 500px; margin: 0 auto;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 36px;
+    background: var(--surface); border-radius: var(--radius);
+    padding: 6px; border: 1px solid var(--border);
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 20px;
+    font-family: 'Unbounded', sans-serif; font-size: 12px;
+    font-weight: 700; letter-spacing: 1px;
+    border: none; border-radius: 10px; cursor: pointer;
+    background: transparent; color: var(--muted);
+    transition: all .3s ease;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(26,127,90,.25);
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface2); }
+
+  /* ── Page ── */
+  .page { display: none; animation: fadeUp .4s ease; }
+  .page.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Section title ── */
+  .section-heading {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-heading .icon { font-size: 20px; }
+
+  /* ── Question card ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    transition: border-color .2s;
+  }
+  .q-card {box-shadow: 0 2px 8px rgba(0,0,0,.05);}
+  .q-card:hover { border-color: rgba(26,127,90,.35); box-shadow: 0 4px 16px rgba(26,127,90,.1); }
+  .q-label {
+    font-size: 14px; font-weight: 500; line-height: 1.55;
+    margin-bottom: 18px; color: var(--text);
+  }
+  .q-num {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px; color: var(--accent2);
+    letter-spacing: 2px; margin-bottom: 6px;
+    display: block;
+  }
+
+  /* ── Radio group ── */
+  .radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .radio-option {
+    position: relative; cursor: pointer;
+  }
+  .radio-option input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .radio-option .pill {
+    display: block;
+    padding: 9px 18px;
+    border-radius: 50px;
+    border: 1.5px solid var(--border);
+    font-size: 13px; font-weight: 400;
+    color: var(--muted);
+    background: var(--surface2);
+    transition: all .2s ease;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .radio-option input:checked + .pill {
+    border-color: var(--accent);
+    background: rgba(110,231,183,.12);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .radio-option .pill:hover { border-color: var(--accent2); color: var(--text); }
+
+  /* ── Num scale ── */
+  .num-scale { display: flex; gap: 8px; flex-wrap: wrap; }
+  .num-opt { position: relative; }
+  .num-opt input { display: none; }
+  .num-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer; font-weight: 500; font-size: 13px;
+    transition: all .2s;
+    color: var(--muted);
+  }
+  .num-opt input:checked + .num-btn {
+    border-color: var(--accent);
+    background: rgba(110,231,183,.12);
+    color: var(--accent);
+  }
+  .num-btn:hover { border-color: var(--accent2); color: var(--text); }
+
+  /* ── Button styles ── */
+  .submit-wrap { margin-top: 36px; text-align: center; }
+  .btn-submit {
+    display: inline-block;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all .3s;
+    box-shadow: 0 4px 20px rgba(26,127,90,.25);
+  }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(26,127,90,.35); }
+
+  /* ── Stats ── */
+  .stats-actions {
+    display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .btn-secondary {
+    padding: 10px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+  .st-label { font-size: 13px; font-weight: 500; margin-bottom: 12px; color: var(--text); }
+  .stat-bar-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .stat-bar-row { display: flex; align-items: center; gap: 10px; }
+  .s-name { font-size: 12px; color: var(--text); min-width: 50px; }
+  .stat-bar-bg { flex: 1; height: 20px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; }
+  .s-count { font-size: 12px; font-weight: 600; color: var(--accent); min-width: 30px; text-align: right; }
+  .total-count { font-size: 11px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+  /* ── Password dialog ── */
+  .password-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .password-overlay.active { display: flex; }
+  .password-dialog {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    max-width: 360px;
+    width: 90%;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .pd-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .pd-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .pd-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    transition: border-color .2s;
+  }
+  .pd-input:focus { outline: none; border-color: var(--accent); }
+  .pd-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  .pd-btn {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 13px;
+  }
+  .pd-btn-submit {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+  }
+  .pd-btn-submit:hover { opacity: 0.9; }
+  .pd-btn-cancel {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .pd-btn-cancel:hover { border-color: var(--accent); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 14px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    z-index: 2000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all .3s;
+    pointer-events: none;
+    max-width: 360px;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<div class="wrap">
+  <!-- Header -->
+  <div class="site-header">
+    <span class="tag">STEAM Образование</span>
+    <h1>Ваше мнение важно</h1>
+    <p>Помогите нам улучшить учебные материалы, поделившись своей оценкой</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchPage('posobie', event)">📘 Пособие</button>
+    <button class="tab-btn" onclick="switchPage('praktikum', event)">🔬 Практикум</button>
+    <button class="tab-btn" onclick="switchPage('stats', event)">📊 Статистика</button>
+  </div>
+
+  <!-- ════════ PAGE: ПОСОБИЕ ════════ -->
+  <div id="page-posobie" class="page active">
+    <div class="section-heading"><span class="icon">📘</span> Оценка пособия</div>
+
+    <!-- Q1 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 01</span>
+      <div class="q-label">Рекомендовали бы вы это пособие коллегам?</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="p_recommend" value="Да, очень">
+          <span class="pill">Да, очень</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_recommend" value="Скорее да">
+          <span class="pill">Скорее да</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_recommend" value="Нейтрально">
+          <span class="pill">Нейтрально</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_recommend" value="Скорее нет">
+          <span class="pill">Скорее нет</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_recommend" value="Нет">
+          <span class="pill">Нет</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 02</span>
+      <div class="q-label">Оцените актуальность содержания.</div>
+      <div class="num-scale">
+        <div class="num-opt"><input type="radio" name="p_actuality" value="1" id="pa1"><label class="num-btn" for="pa1">1</label></div>
+        <div class="num-opt"><input type="radio" name="p_actuality" value="2" id="pa2"><label class="num-btn" for="pa2">2</label></div>
+        <div class="num-opt"><input type="radio" name="p_actuality" value="3" id="pa3"><label class="num-btn" for="pa3">3</label></div>
+        <div class="num-opt"><input type="radio" name="p_actuality" value="4" id="pa4"><label class="num-btn" for="pa4">4</label></div>
+        <div class="num-opt"><input type="radio" name="p_actuality" value="5" id="pa5"><label class="num-btn" for="pa5">5</label></div>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 03</span>
+      <div class="q-label">Полнота охвата тем (достаточно ли информации).</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="p_topics" value="Более чем достаточно">
+          <span class="pill">Более чем достаточно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_topics" value="Достаточно">
+          <span class="pill">Достаточно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_topics" value="Чего-то не хватает">
+          <span class="pill">Чего-то не хватает</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_topics" value="Явно недостаточно">
+          <span class="pill">Явно недостаточно</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 04</span>
+      <div class="q-label">Оцените структуру и логику изложения (1 — плохо, 5 — отлично).</div>
+      <div class="num-scale">
+        <div class="num-opt"><input type="radio" name="p_structure" value="1" id="ps1"><label class="num-btn" for="ps1">1</label></div>
+        <div class="num-opt"><input type="radio" name="p_structure" value="2" id="ps2"><label class="num-btn" for="ps2">2</label></div>
+        <div class="num-opt"><input type="radio" name="p_structure" value="3" id="ps3"><label class="num-btn" for="ps3">3</label></div>
+        <div class="num-opt"><input type="radio" name="p_structure" value="4" id="ps4"><label class="num-btn" for="ps4">4</label></div>
+        <div class="num-opt"><input type="radio" name="p_structure" value="5" id="ps5"><label class="num-btn" for="ps5">5</label></div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 05</span>
+      <div class="q-label">Удобство навигации (оглавление, ссылки, ярлычки).</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="p_nav" value="Очень удобно">
+          <span class="pill">Очень удобно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_nav" value="Удобно">
+          <span class="pill">Удобно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_nav" value="Нейтрально">
+          <span class="pill">Нейтрально</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_nav" value="Неудобно">
+          <span class="pill">Неудобно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_nav" value="Очень неудобно">
+          <span class="pill">Очень неудобно</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 06</span>
+      <div class="q-label">Использование мультимедиа (видео, интерактив, анимация).</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="p_media" value="Отлично">
+          <span class="pill">Отлично</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_media" value="Хорошо">
+          <span class="pill">Хорошо</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_media" value="Средне">
+          <span class="pill">Средне</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_media" value="Слабо">
+          <span class="pill">Слабо</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_media" value="Не используется">
+          <span class="pill">Не используется</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 07</span>
+      <div class="q-label">Наглядность и визуальное оформление.</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="p_visuals" value="Очень наглядно">
+          <span class="pill">Очень наглядно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_visuals" value="Наглядно">
+          <span class="pill">Наглядно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_visuals" value="Нейтрально">
+          <span class="pill">Нейтрально</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_visuals" value="Мало наглядности">
+          <span class="pill">Мало наглядности</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_visuals" value="Совсем не наглядно">
+          <span class="pill">Совсем не наглядно</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 08</span>
+      <div class="q-label">Планируете ли вы использовать это пособие в своей работе/учёбе?</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="p_future" value="Да, точно">
+          <span class="pill">Да, точно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_future" value="Вероятно">
+          <span class="pill">Вероятно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_future" value="Не знаю">
+          <span class="pill">Не знаю</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_future" value="Вряд ли">
+          <span class="pill">Вряд ли</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="p_future" value="Нет">
+          <span class="pill">Нет</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="submit-wrap">
+      <button class="btn-submit" onclick="submitForm('posobie')">Отправить оценку пособия →</button>
+    </div>
+  </div>
+
+  <!-- ════════ PAGE: ПРАКТИКУМ ════════ -->
+  <div id="page-praktikum" class="page">
+    <div class="section-heading"><span class="icon">🔬</span> Оценка практикума</div>
+
+    <!-- Q1 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 01</span>
+      <div class="q-label">Оцените количество практических заданий.</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="pr_quantity" value="Очень много">
+          <span class="pill">Очень много</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_quantity" value="Достаточно">
+          <span class="pill">Достаточно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_quantity" value="Чуть мало">
+          <span class="pill">Чуть мало</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_quantity" value="Явно мало">
+          <span class="pill">Явно мало</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 02</span>
+      <div class="q-label">Помогают ли задания закрепить теоретический материал?</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="pr_help" value="Очень помогают">
+          <span class="pill">Очень помогают</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_help" value="Помогают">
+          <span class="pill">Помогают</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_help" value="Отчасти помогают">
+          <span class="pill">Отчасти помогают</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_help" value="Не помогают">
+          <span class="pill">Не помогают</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 03</span>
+      <div class="q-label">Достаточное ли разнообразие типов заданий?</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="pr_variety" value="Очень разнообразно">
+          <span class="pill">Очень разнообразно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_variety" value="Разнообразно">
+          <span class="pill">Разнообразно</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_variety" value="Нейтрально">
+          <span class="pill">Нейтрально</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_variety" value="Мало разнообразия">
+          <span class="pill">Мало разнообразия</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="pr_variety" value="Однообразно">
+          <span class="pill">Однообразно</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card">
+      <span class="q-num">ВОПРОС 04</span>
+      <div class="q-label">Оцените качество иллюстраций, схем, графиков в практикуме.</div>
+      <div class="num-scale">
+        <div class="num-opt"><input type="radio" name="pr_illust" value="1" id="pri1"><label class="num-btn" for="pri1">1</label></div>
+        <div class="num-opt"><input type="radio" name="pr_illust" value="2" id="pri2"><label class="num-btn" for="pri2">2</label></div>
+        <div class="num-opt"><input type="radio" name="pr_illust" value="3" id="pri3"><label class="num-btn" for="pri3">3</label></div>
+        <div class="num-opt"><input type="radio" name="pr_illust" value="4" id="pri4"><label class="num-btn" for="pri4">4</label></div>
+        <div class="num-opt"><input type="radio" name="pr_illust" value="5" id="pri5"><label class="num-btn" for="pri5">5</label></div>
+      </div>
+    </div>
+
+    <div class="submit-wrap">
+      <button class="btn-submit" onclick="submitForm('praktikum')">Отправить оценку практикума →</button>
+    </div>
+  </div>
+
+  <!-- ════════ PAGE: СТАТИСТИКА ════════ -->
+  <div id="page-stats" class="page">
+    <div class="section-heading"><span class="icon">📊</span> Статистика голосований</div>
+
+    <div class="stats-actions">
+      <button class="btn-secondary" onclick="exportCSV()">⬇ Экспорт CSV</button>
+      <button class="btn-secondary" onclick="exportJSON()">⬇ Экспорт JSON</button>
+      <button class="btn-secondary btn-danger" onclick="clearAll()">✕ Очистить данные</button>
+    </div>
+
+    <div id="stats-container"></div>
+  </div>
+
+</div>
+
+<!-- Password Dialog -->
+<div class="password-overlay" id="passwordOverlay">
+  <div class="password-dialog">
+    <div class="pd-title">🔐 Доступ ограничен</div>
+    <div class="pd-desc">Введите пароль для просмотра статистики</div>
+    <input type="password" id="passwordInput" class="pd-input" placeholder="Пароль" onkeydown="if(event.key==='Enter') checkPassword()">
+    <div class="pd-buttons">
+      <button class="pd-btn pd-btn-cancel" onclick="closePasswordDialog()">Отмена</button>
+      <button class="pd-btn pd-btn-submit" onclick="checkPassword()">Доступ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const CORRECT_PASSWORD = '1407';
+
+// ═════════════════════════════════════════════════════════════
+// ⚙️ КОНФИГУРАЦИЯ: ЗАПОЛНИ СВОИ ДАННЫЕ
+// ═════════════════════════════════════════════════════════════
+const CONFIG = {
+  // Google Sheets Webhook (получишь на шаге 2)
+  GOOGLE_SHEET_WEBHOOK: 'https://script.google.com/macros/d/YOUR_DEPLOYMENT_ID/userweb?v=1',
+  
+  // Telegram Bot Token (получишь в @BotFather)
+  TELEGRAM_TOKEN: 'YOUR_TELEGRAM_BOT_TOKEN',
+  
+  // Telegram Chat ID (получишь от @userinfobot)
+  TELEGRAM_CHAT_ID: 'YOUR_CHAT_ID',
+  
+  // Включить ли интеграции (true/false)
+  GOOGLE_SHEETS_ENABLED: false,
+  TELEGRAM_ENABLED: false,
+};
+
+// ═════════════════════════════════════════════════════════════
+
+// ── Storage helpers ──
+function loadData() {
+  try { return JSON.parse(localStorage.getItem('steam_votes') || '{"posobie":[],"praktikum":[]}'); }
+  catch { return { posobie: [], praktikum: [] }; }
+}
+
+function saveData(d) { localStorage.setItem('steam_votes', JSON.stringify(d)); }
+
+// ── Password dialog ──
+function openPasswordDialog() {
+  document.getElementById('passwordOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+}
+
+function closePasswordDialog() {
+  document.getElementById('passwordOverlay').classList.remove('active');
+  document.getElementById('passwordInput').value = '';
+}
+
+function checkPassword() {
+  const pwd = document.getElementById('passwordInput').value;
+  if (pwd === CORRECT_PASSWORD) {
+    closePasswordDialog();
+    renderStats();
+  } else {
+    showToast('❌ Неверный пароль');
+    document.getElementById('passwordInput').value = '';
+  }
+}
+
+// ── Tab switching ──
+function switchPage(page, event) {
+  if (page === 'stats') {
+    event.preventDefault();
+    openPasswordDialog();
+    return;
+  }
+  
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Collect form values (БЕЗ ДАТЫ) ──
+function collectForm(prefix, fields) {
+  const result = {};
+  for (const [name, label] of fields) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    result[label] = el ? el.value : null;
+  }
+  return result;
+}
+
+// ── Submit ──
+function submitForm(type) {
+  let entry, fields;
+  if (type === 'posobie') {
+    fields = [
+      ['p_recommend','Рекомендация'],
+      ['p_actuality','Актуальность содержания'],
+      ['p_topics','Полнота тем'],
+      ['p_structure','Структура (1-5)'],
+      ['p_nav','Навигация'],
+      ['p_media','Мультимедиа'],
+      ['p_visuals','Наглядность'],
+      ['p_future','Планируете использовать'],
+    ];
+  } else {
+    fields = [
+      ['pr_quantity','Количество заданий'],
+      ['pr_help','Закрепление теории'],
+      ['pr_variety','Разнообразие заданий'],
+      ['pr_illust','Качество иллюстраций (1-5)'],
+    ];
+  }
+  entry = collectForm(type, fields);
+
+  // check all answered
+  const unanswered = fields.filter(([name]) => !document.querySelector(`input[name="${name}"]:checked`));
+  if (unanswered.length > 0) {
+    showToast(`⚠ Ответьте на все вопросы (${unanswered.length} пропущено)`);
+    return;
+  }
+
+  const data = loadData();
+  data[type].push(entry);
+  saveData(data);
+  showToast('✓ Голос сохранён! Спасибо.');
+
+  // Отправить в облако и Telegram
+  sendToCloud(type, entry);
+
+  // reset
+  document.querySelectorAll(`#page-${type === 'posobie' ? 'posobie' : 'praktikum'} input[type=radio]`)
+    .forEach(el => el.checked = false);
+}
+
+// ── Отправка в облако и Telegram ──
+async function sendToCloud(type, entry) {
+  // Google Sheets
+  if (CONFIG.GOOGLE_SHEETS_ENABLED && CONFIG.GOOGLE_SHEET_WEBHOOK) {
+    try {
+      await fetch(CONFIG.GOOGLE_SHEET_WEBHOOK, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ type, data: entry })
+      });
+    } catch (e) { console.log('Sheets sync:', e.message); }
+  }
+
+  // Telegram
+  if (CONFIG.TELEGRAM_ENABLED && CONFIG.TELEGRAM_TOKEN && CONFIG.TELEGRAM_CHAT_ID) {
+    sendToTelegram(type, entry);
+  }
+}
+
+// ── Отправка уведомления в Telegram ──
+async function sendToTelegram(type, entry) {
+  const typeLabel = type === 'posobie' ? '📘 Пособие' : '🔬 Практикум';
+  let message = `<b>${typeLabel}</b>\n\n`;
+  
+  for (const [key, val] of Object.entries(entry)) {
+    message += `<b>${key}:</b> ${val}\n`;
+  }
+  
+  const url = `https://api.telegram.org/bot${CONFIG.TELEGRAM_TOKEN}/sendMessage`;
+  
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CONFIG.TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (e) { console.log('Telegram error:', e.message); }
+}
+
+// ── Render stats ──
+function renderStats() {
+  const data = loadData();
+  const container = document.getElementById('stats-container');
+  container.innerHTML = '';
+
+  const sections = [
+    {
+      title: '📘 Пособие', key: 'posobie',
+      qs: [
+        { label: 'Рекомендация', field: 'Рекомендация' },
+        { label: 'Актуальность содержания', field: 'Актуальность содержания' },
+        { label: 'Полнота тем', field: 'Полнота тем' },
+        { label: 'Структура (1-5)', field: 'Структура (1-5)' },
+        { label: 'Навигация', field: 'Навигация' },
+        { label: 'Мультимедиа', field: 'Мультимедиа' },
+        { label: 'Наглядность', field: 'Наглядность' },
+        { label: 'Планируете использовать', field: 'Планируете использовать' },
+      ]
+    },
+    {
+      title: '🔬 Практикум', key: 'praktikum',
+      qs: [
+        { label: 'Количество заданий', field: 'Количество заданий' },
+        { label: 'Закрепление теории', field: 'Закрепление теории' },
+        { label: 'Разнообразие заданий', field: 'Разнообразие заданий' },
+        { label: 'Качество иллюстраций (1-5)', field: 'Качество иллюстраций (1-5)' },
+      ]
+    }
+  ];
+
+  for (const sec of sections) {
+    const votes = data[sec.key];
+    const sh = document.createElement('div');
+    sh.innerHTML = `<div class="section-heading" style="margin-top:28px"><span>${sec.title}</span><span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:auto">Голосов: ${votes.length}</span></div>`;
+    container.appendChild(sh);
+
+    if (votes.length === 0) {
+      const empty = document.createElement('p');
+      empty.style.cssText = 'color:var(--muted);font-size:13px;margin-bottom:20px;';
+      empty.textContent = 'Голосований пока нет.';
+      container.appendChild(empty);
+      continue;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'stats-grid';
+
+    for (const q of sec.qs) {
+      const counts = {};
+      let total = 0;
+      for (const v of votes) {
+        const val = v[q.field];
+        if (val) { counts[val] = (counts[val] || 0) + 1; total++; }
+      }
+
+      const card = document.createElement('div');
+      card.className = 'stat-card';
+      let html = `<div class="st-label">${q.label}</div><div class="stat-bar-wrap">`;
+      for (const [opt, cnt] of Object.entries(counts).sort((a,b)=>b[1]-a[1])) {
+        const pct = total ? Math.round(cnt / total * 100) : 0;
+        html += `
+          <div class="stat-bar-row">
+            <span class="s-name">${opt}</span>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
+            <span class="s-count">${cnt}</span>
+          </div>`;
+      }
+      html += `</div><div class="total-count">Итого: ${total} ответов</div>`;
+      card.innerHTML = html;
+      grid.appendChild(card);
+    }
+    container.appendChild(grid);
+  }
+}
+
+// ── Export CSV ──
+function exportCSV() {
+  const data = loadData();
+  let csv = '';
+
+  for (const [type, votes] of Object.entries(data)) {
+    if (!votes.length) continue;
+    const keys = Object.keys(votes[0]);
+    csv += `\n=== ${type.toUpperCase()} ===\n`;
+    csv += keys.join(';') + '\n';
+    for (const v of votes) csv += keys.map(k => `"${v[k] ?? ''}"`).join(';') + '\n';
+  }
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'steam_votes.csv';
+  a.click();
+  showToast('✓ CSV скачан');
+}
+
+// ── Export JSON ──
+function exportJSON() {
+  const data = loadData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'steam_votes.json';
+  a.click();
+  showToast('✓ JSON скачан');
+}
+
+// ── Clear ──
+function clearAll() {
+  if (!confirm('Удалить все голоса? Это действие необратимо.')) return;
+  saveData({ posobie: [], praktikum: [] });
+  renderStats();
+  showToast('Данные очищены');
+}
+</script>
+
+</body>
+</html>
